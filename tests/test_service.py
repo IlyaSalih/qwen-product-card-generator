@@ -52,11 +52,13 @@ def test_empty_values_are_explicitly_marked(product):
 def test_invalid_answer_is_regenerated_with_feedback(product):
     invalid = json.loads(valid_raw())
     invalid["seo_description"] = "Слишком коротко"
-    llm = FakeLLM([json.dumps(invalid), valid_raw()])
+    llm = FakeLLM([json.dumps(invalid, ensure_ascii=False), valid_raw()])
     card = CardGenerator(llm, replace(Settings(), max_attempts=2)).generate(product)
     assert len(card.seo_description) >= 800
     assert len(llm.feedback) == 2
     assert "800–1200" in llm.feedback[1]
+    assert "Предыдущий ответ для редактирования" in llm.feedback[1]
+    assert "Слишком коротко" in llm.feedback[1]
 
 
 def test_generation_stops_after_configured_attempts(product):

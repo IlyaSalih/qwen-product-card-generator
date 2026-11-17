@@ -16,7 +16,7 @@ class Settings:
     model: str = "qwen2.5:7b"
     api_key: str = "ollama"
     timeout: float = 120.0
-    max_attempts: int = 3
+    max_attempts: int = 4
 
     @classmethod
     def from_env(

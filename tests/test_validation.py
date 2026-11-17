@@ -43,6 +43,30 @@ def test_source_number_with_leading_zero_is_normalized(product):
     assert validate_generated_content(content, product) == []
 
 
+def test_unsubstantiated_quality_claims_are_rejected(product):
+    payload = json.loads(valid_raw())
+    payload["seo_description"] += (
+        " Устройство обеспечивает точное отслеживание, надёжное измерение "
+        "и стабильную работу без дополнительных модификаций."
+    )
+    content = parse_generated_content(json.dumps(payload, ensure_ascii=False))
+    errors = validate_generated_content(content, product)
+    assert any("точное отслеживание" in error for error in errors)
+    assert any("надёжное" in error for error in errors)
+    assert any("стабильную" in error for error in errors)
+    assert any("без дополнительных модификаций" in error for error in errors)
+
+
+def test_quality_claim_explicitly_present_in_source_is_allowed(product):
+    product = product.model_copy(
+        update={"description": product.description + " Обеспечивает стабильную работу."}
+    )
+    payload = json.loads(valid_raw())
+    payload["seo_description"] += " Обеспечивает стабильную работу."
+    content = parse_generated_content(json.dumps(payload, ensure_ascii=False))
+    assert validate_generated_content(content, product) == []
+
+
 def test_json_inside_markdown_fence_is_accepted(product):
     content = parse_generated_content(f"```json\n{valid_raw()}\n```")
     assert validate_generated_content(content, product) == []

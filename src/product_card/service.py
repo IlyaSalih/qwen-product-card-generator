@@ -37,7 +37,12 @@ class CardGenerator:
                 last_errors = [str(exc)]
             if content is not None and not last_errors:
                 return _assemble_card(content, product, self.settings.model)
-            feedback = "\n".join(f"- {error}" for error in last_errors)
+            feedback = (
+                "Замечания валидатора:\n"
+                + "\n".join(f"- {error}" for error in last_errors)
+                + "\n\nПредыдущий ответ для редактирования:\n"
+                + raw
+            )
 
         details = " ".join(last_errors)
         raise GenerationValidationError(

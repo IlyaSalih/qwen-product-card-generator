@@ -12,6 +12,13 @@ from .errors import GenerationValidationError
 from .models import GeneratedContent, ProductInput
 
 _NUMBER_RE = re.compile(r"(?<![\w])[-+]?\d+(?:[.,]\d+)?", re.UNICODE)
+_CLAIM_PATTERNS = (
+    re.compile(r"\b(?:над[её]жн\w*|стабильн\w*|высокоточн\w*)\b", re.IGNORECASE),
+    re.compile(r"точн(?:ое|ая)\s+(?:отслеживание|измерение|настройка)", re.IGNORECASE),
+    re.compile(r"(?:сохран\w*|обеспечива\w*)\s+точность", re.IGNORECASE),
+    re.compile(r"без\s+дополнительных\s+модификаций", re.IGNORECASE),
+    re.compile(r"условиях\s+переменных\s+параметров", re.IGNORECASE),
+)
 
 
 def parse_generated_content(raw: str) -> GeneratedContent:
@@ -54,8 +61,17 @@ def validate_generated_content(
         errors.append("seo_title: пустой заголовок")
     elif len(title) > 70:
         errors.append(f"seo_title: {len(title)} символов, нужно не более 70")
-    if not 800 <= len(description) <= 1200:
-        errors.append(f"seo_description: {len(description)} символов, нужно 800–1200")
+    if len(description) < 800:
+        errors.append(
+            f"seo_description: {len(description)} символов, нужно 800–1200. "
+            f"Добавь примерно {950 - len(description)} символов до целевой длины 950–1100; "
+            "расширь предыдущий текст подтверждёнными сведениями, а не начинай заново"
+        )
+    elif len(description) > 1200:
+        errors.append(
+            f"seo_description: {len(description)} символов, нужно 800–1200. "
+            "Сократи предыдущий текст до целевой длины 950–1100"
+        )
     if not 3 <= len(queries) <= 5:
         errors.append(f"search_queries: получено {len(queries)}, нужно 3–5")
     if any(not query for query in queries):
@@ -66,12 +82,27 @@ def validate_generated_content(
     if not commercial:
         errors.append("commercial_block: пустой текст")
 
-    source_numbers = extract_numbers(product.model_dump_json())
+    source_text = product.model_dump_json()
     generated_text = "\n".join([title, description, *queries, commercial])
+    source_numbers = extract_numbers(source_text)
     unknown_numbers = sorted(extract_numbers(generated_text) - source_numbers)
     if unknown_numbers:
         errors.append("Необоснованные числовые значения: " + ", ".join(unknown_numbers))
+    for claim in find_unsupported_claims(generated_text, source_text):
+        errors.append(f"Неподтверждённое качественное утверждение: «{claim}»")
     return errors
+
+
+def find_unsupported_claims(generated_text: str, source_text: str) -> list[str]:
+    """Консервативно блокирует маркетинговые обещания, которых нет в источнике."""
+    source_casefold = source_text.casefold()
+    claims: set[str] = set()
+    for pattern in _CLAIM_PATTERNS:
+        for match in pattern.finditer(generated_text):
+            claim = match.group(0)
+            if claim.casefold() not in source_casefold:
+                claims.add(claim)
+    return sorted(claims, key=str.casefold)
 
 
 def extract_numbers(text: str) -> set[str]:

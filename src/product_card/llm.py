@@ -32,7 +32,7 @@ class QwenClient:
                         "content": build_user_prompt(product_json, validation_feedback),
                     },
                 ],
-                temperature=0.2,
+                temperature=0.0,
                 max_tokens=2200,
             )
         except APITimeoutError as exc:
