@@ -17,6 +17,7 @@ class Settings:
     api_key: str = "ollama"
     timeout: float = 120.0
     max_attempts: int = 4
+    mode: str = "safe"
 
     @classmethod
     def from_env(
@@ -24,6 +25,7 @@ class Settings:
         *,
         base_url: str | None = None,
         model: str | None = None,
+        mode: str | None = None,
     ) -> Settings:
         load_dotenv()
         settings = cls(
@@ -32,11 +34,14 @@ class Settings:
             api_key=os.getenv("LLM_API_KEY") or cls.api_key,
             timeout=_read_float("LLM_TIMEOUT", cls.timeout),
             max_attempts=_read_int("LLM_MAX_ATTEMPTS", cls.max_attempts),
+            mode=mode or os.getenv("GENERATION_MODE") or cls.mode,
         )
         if settings.timeout <= 0:
             raise InputDataError("LLM_TIMEOUT должен быть больше нуля.")
         if not 1 <= settings.max_attempts <= 5:
             raise InputDataError("LLM_MAX_ATTEMPTS должен быть от 1 до 5.")
+        if settings.mode not in {"safe", "llm"}:
+            raise InputDataError("GENERATION_MODE должен быть safe или llm.")
         return settings
 
 

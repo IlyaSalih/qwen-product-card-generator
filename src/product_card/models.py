@@ -86,6 +86,7 @@ class ProductCard(BaseModel):
     product_name: str
     manufacturer: str
     generation_model: str
+    generation_mode: str = "llm_draft"
 
 
 def _is_empty(value: Any) -> bool:

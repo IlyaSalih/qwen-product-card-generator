@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qwen-product-card-generator"
-version = "1.0.0"
-description = "Черновики B2B-карточек контрольно-измерительных приборов через локальный Qwen"
+version = "1.1.0"
+description = "Безопасные B2B-карточки приборов и отдельные черновики локального Qwen"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}

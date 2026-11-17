@@ -43,6 +43,7 @@ def render_markdown(card: ProductCard) -> str:
 - Исходный товар: {card.product_name}
 - Производитель: {card.manufacturer}
 - Модель генерации: `{card.generation_model}`
+- Режим генерации: `{card.generation_mode}`
 """
 
 
